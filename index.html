@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Манга Орчуулагч</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141418;
+    --surface2: #1c1c24;
+    --border: #2a2a38;
+    --accent: #e63946;
+    --accent2: #ff6b6b;
+    --text: #e8e6e0;
+    --text-dim: #7a7890;
+    --gold: #c9a84c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans', sans-serif;
+    min-height: 100vh;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 20% 20%, rgba(230,57,70,0.06) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 36px 20px;
+  }
+
+  header { text-align: center; margin-bottom: 40px; }
+
+  .logo {
+    font-family: 'Bebas Neue', cursive;
+    font-size: 48px;
+    letter-spacing: 6px;
+    background: linear-gradient(135deg, var(--accent), var(--gold));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .logo-sub {
+    font-size: 11px;
+    letter-spacing: 7px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .divider {
+    width: 50px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    margin: 16px auto;
+  }
+
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+    padding: 48px 32px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: var(--surface);
+  }
+
+  .upload-zone:hover, .upload-zone.drag-over {
+    border-color: var(--accent);
+    box-shadow: 0 0 30px rgba(230,57,70,0.12);
+  }
+
+  .upload-icon { font-size: 42px; margin-bottom: 12px; display: block; }
+  .upload-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .upload-hint { font-size: 12px; color: var(--text-dim); }
+
+  .upload-btn {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 9px 24px;
+    background: var(--accent);
+    color: white;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  #fileInput { display: none; }
+
+  .settings-bar {
+    display: flex;
+    gap: 10px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .settings-label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; text-transform: uppercase; }
+
+  .lang-select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .lang-select:focus { border-color: var(--accent); }
+
+  .translate-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), #c1121f);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', cursive;
+    font-size: 22px;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.25s;
+    margin-top: 6px;
+  }
+
+  .translate-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(230,57,70,0.35);
+  }
+
+  .translate-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 10px;
+    margin: 20px 0 6px;
+  }
+
+  .preview-thumb {
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    position: relative;
+  }
+
+  .preview-thumb img { width: 100%; height: 200px; object-fit: cover; display: block; }
+
+  .preview-thumb-label {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.75);
+    color: #aaa; font-size: 10px;
+    padding: 3px 6px;
+  }
+
+  .result-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-top: 16px;
+    overflow: hidden;
+  }
+
+  .result-card-header {
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .result-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 100px;
+  }
+
+  @media (max-width: 560px) { .result-card-body { grid-template-columns: 1fr; } }
+
+  .result-col {
+    padding: 16px 18px;
+    font-size: 13px;
+    line-height: 1.9;
+    white-space: pre-wrap;
+  }
+
+  .result-col.orig {
+    border-right: 1px solid var(--border);
+    color: #888;
+    font-style: italic;
+  }
+
+  .result-col.mong { color: var(--text); font-size: 14px; }
+
+  .cursor {
+    display: inline-block;
+    width: 2px; height: 13px;
+    background: var(--accent);
+    margin-left: 1px;
+    vertical-align: middle;
+    animation: blink 0.65s step-end infinite;
+  }
+
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .status-bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .status-bar.active { display: flex; }
+
+  .status-dot {
+    width: 7px; height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pdot 1s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+
+  @keyframes pdot {
+    0%,100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  .copy-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  .error-msg {
+    background: rgba(230,57,70,0.1);
+    border: 1px solid rgba(230,57,70,0.3);
+    color: var(--accent2);
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-top: 12px;
+    display: none;
+  }
+
+  .error-msg.show { display: block; }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+  }
+
+  .col-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .col-tag {
+    font-size: 9px;
+    letter-spacing: 2px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+  }
+
+  .col-tag.orig-tag { background: rgba(122,120,144,0.2); color: var(--text-dim); }
+
+  .apikey-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+  }
+  .apikey-bar input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-family: monospace;
+    outline: none;
+  }
+  .apikey-bar input:focus { border-color: var(--accent); }
+  .apikey-label { font-size: 11px; color: var(--text-dim); letter-spacing: 1px; white-space: nowrap; }
+  .apikey-save {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .apikey-save:hover { border-color: var(--gold); color: var(--gold); }
+  .col-tag.mong-tag { background: rgba(230,57,70,0.15); color: var(--accent2); }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="logo">МАНГА ОРЧУУЛАГЧ</div>
+    <div class="logo-sub">Зураг → Монгол · Streaming</div>
+    <div class="divider"></div>
+  </header>
+
+  <div class="apikey-bar">
+    <span class="apikey-label">🔑 API KEY:</span>
+    <input type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off">
+    <button class="apikey-save" onclick="saveKey()">💾 Хадгалах</button>
+  </div>
+
+  <div class="upload-zone" id="uploadZone">
+    <span class="upload-icon">📖</span>
+    <div class="upload-title" id="uploadTitle">Манга хуудас оруулах</div>
+    <div class="upload-hint">JPG · PNG · WEBP · Олон хуудас нэгэн зэрэг</div>
+    <div class="upload-btn">Файл сонгох</div>
+    <input type="file" id="fileInput" accept="image/*" multiple>
+  </div>
+
+  <div class="settings-bar">
+    <span class="settings-label">Хэл:</span>
+    <select class="lang-select" id="sourceLang">
+      <option value="auto">🔍 Автомат</option>
+      <option value="japanese">🇯🇵 Япон</option>
+      <option value="korean">🇰🇷 Солонгос</option>
+      <option value="chinese">🇨🇳 Хятад</option>
+      <option value="english">🇬🇧 Англи</option>
+    </select>
+    <span class="settings-label" style="margin-left:8px">Горим:</span>
+    <select class="lang-select" id="styleMode">
+      <option value="natural">💬 Байгалийн</option>
+      <option value="manga">⚡ Манга стиль</option>
+      <option value="literal">📝 Үгчилсэн</option>
+    </select>
+    <span class="settings-label" style="margin-left:8px">Загвар:</span>
+    <select class="lang-select" id="modelSelect">
+      <option value="claude-haiku-4-5-20251001">⚡ Haiku (хурдан)</option>
+      <option value="claude-sonnet-4-20250514">🎯 Sonnet (нарийн)</option>
+    </select>
+  </div>
+
+  <button class="translate-btn" id="translateBtn" disabled>⚡ ОРЧУУЛ</button>
+
+  <div class="status-bar" id="statusBar">
+    <div class="status-dot"></div>
+    <span id="statusText">Орчуулж байна...</span>
+  </div>
+
+  <div class="error-msg" id="errorMsg"></div>
+  <div id="previewGrid" class="preview-grid"></div>
+  <div id="results"></div>
+
+  <div class="footer-note">Claude AI · Streaming орчуулга · Текст формат</div>
+</div>
+
+<script>
+// API key хадгалах/ачаалах
+function saveKey() {
+  const k = document.getElementById('apiKeyInput').value.trim();
+  if (k) { localStorage.setItem('mngt_apikey', k); alert('✅ API түлхүүр хадгалагдлаа'); }
+}
+(function loadKey() {
+  const k = localStorage.getItem('mngt_apikey');
+  if (k) document.getElementById('apiKeyInput').value = k;
+})();
+
+const uploadZone  = document.getElementById('uploadZone');
+const fileInput   = document.getElementById('fileInput');
+const translateBtn= document.getElementById('translateBtn');
+const statusBar   = document.getElementById('statusBar');
+const statusText  = document.getElementById('statusText');
+const errorMsg    = document.getElementById('errorMsg');
+const results     = document.getElementById('results');
+const previewGrid = document.getElementById('previewGrid');
+
+let selectedFiles = [];
+
+uploadZone.addEventListener('click', () => fileInput.click());
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag-over');
+  handleFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/')));
+});
+fileInput.addEventListener('change', () => handleFiles(Array.from(fileInput.files)));
+
+function handleFiles(files) {
+  if (!files.length) return;
+  selectedFiles = files;
+  previewGrid.innerHTML = '';
+  files.forEach((f, i) => {
+    const url = URL.createObjectURL(f);
+    const div = document.createElement('div');
+    div.className = 'preview-thumb';
+    div.innerHTML = `<img src="${url}"><div class="preview-thumb-label">${i+1}. ${f.name.slice(0,18)}</div>`;
+    previewGrid.appendChild(div);
+  });
+  document.getElementById('uploadTitle').textContent = `${files.length} хуудас сонгогдлоо`;
+  translateBtn.disabled = false;
+  results.innerHTML = '';
+  errorMsg.classList.remove('show');
+}
+
+function toBase64(file) {
+  return new Promise((res, rej) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      // Max 1568px (Claude-н оновчтой хэмжээ), файлын хэмжээг багасгана
+      const MAX = 1568;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      // JPEG болгож compress хийнэ (манга зурагт хангалттай)
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      URL.revokeObjectURL(url);
+      res({ b64: dataUrl.split(',')[1], type: 'image/jpeg' });
+    };
+    img.onerror = rej;
+    img.src = url;
+  });
+}
+
+async function translateStreaming(file, index, origCol, mongCol) {
+  origCol.textContent = '⏳ Орчуулж байна...';
+  mongCol.textContent = '';
+
+  const { b64, type } = await toBase64(file);
+
+  const langHint = {
+    auto:'автоматаар танина уу', japanese:'Японоор бичигдсэн',
+    korean:'Солонгосоор бичигдсэн', chinese:'Хятадаар бичигдсэн', english:'Англиар бичигдсэн'
+  }[document.getElementById('sourceLang').value];
+
+  const styleHint = {
+    natural:'Байгалийн монгол хэлээр орчуул.',
+    literal:'Үгчилсэн орчуулга хий.',
+    manga:'Манга стиль — экспрессив, сэтгэл хөдлөлтэй монголоор.'
+  }[document.getElementById('styleMode').value];
+
+  const prompt = `Энэ манга хуудсыг орчуул. Хэл: ${langHint}
+
+Яг доорх форматаар хариул:
+
+=ЭХ=
+(bubble, caption бүрийн текст — мөр болгон)
+
+=МОНГОЛ=
+(ижил дарааллаар монголоор)
+${styleHint}`;
+
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  if (!apiKey) throw new Error('API түлхүүр оруулна уу!');
+
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model: document.getElementById('modelSelect').value,
+      max_tokens: 800,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: type, data: b64 } },
+          { type: 'text', text: prompt }
+        ]
+      }]
+    })
+  });
+
+  const rawText = await resp.text();
+  if (!rawText || rawText.trim() === '') {
+    throw new Error(`API хоосон хариулт буцаалаа (HTTP ${resp.status})`);
+  }
+  let data;
+  try { data = JSON.parse(rawText); }
+  catch (e) { throw new Error(`JSON алдаа (HTTP ${resp.status}): ${rawText.slice(0, 200)}`); }
+  if (data.error) throw new Error(data.error.message || 'API алдаа');
+  const full = data.content?.[0]?.text || '';
+
+  const oFin = full.match(/=ЭХ=\n([\s\S]*?)(?:=МОНГОЛ=|$)/);
+  const mFin = full.match(/=МОНГОЛ=\n([\s\S]*?)$/);
+  origCol.textContent = oFin ? oFin[1].trim() : '(текст олдсонгүй)';
+  mongCol.textContent = mFin ? mFin[1].trim() : full.trim();
+}
+
+translateBtn.addEventListener('click', async () => {
+  if (!selectedFiles.length) return;
+  translateBtn.disabled = true;
+  statusBar.classList.add('active');
+  results.innerHTML = '';
+  errorMsg.classList.remove('show');
+
+  try {
+    for (let i = 0; i < selectedFiles.length; i++) {
+      statusText.textContent = `${i+1}/${selectedFiles.length} — орчуулж байна...`;
+
+      const card = document.createElement('div');
+      card.className = 'result-card';
+      card.innerHTML = `
+        <div class="result-card-header">
+          <div class="col-label">
+            <span>📄 Хуудас ${i+1}</span>
+            <span class="col-tag orig-tag">Эх</span>
+            <span>·</span>
+            <span class="col-tag mong-tag">Монгол</span>
+          </div>
+          <button class="copy-btn">📋 Хуулах</button>
+        </div>
+        <div class="result-card-body">
+          <div class="result-col orig"></div>
+          <div class="result-col mong"></div>
+        </div>`;
+      results.appendChild(card);
+      card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      const origCol = card.querySelector('.orig');
+      const mongCol = card.querySelector('.mong');
+
+      card.querySelector('.copy-btn').addEventListener('click', function() {
+        navigator.clipboard.writeText(mongCol.textContent);
+        this.textContent = '✅ Хуулагдлаа';
+        setTimeout(() => this.textContent = '📋 Хуулах', 2000);
+      });
+
+      await translateStreaming(selectedFiles[i], i, origCol, mongCol);
+    }
+
+    statusText.textContent = `✅ ${selectedFiles.length} хуудас орчуулагдлаа`;
+    setTimeout(() => statusBar.classList.remove('active'), 3000);
+
+  } catch (err) {
+    errorMsg.textContent = '⚠️ ' + err.message;
+    errorMsg.classList.add('show');
+    statusBar.classList.remove('active');
+  } finally {
+    translateBtn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>
